@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  grantStrings,
   parsePolicy,
   readAcls,
   readAutoApprovers,
+  readGrants,
   readStringArrayMap,
   readStringMap,
   serializePolicy,
@@ -82,5 +84,25 @@ describe("readers coerce unexpected shapes safely", () => {
 
   test("readAutoApprovers returns empty defaults when missing", () => {
     expect(readAutoApprovers({})).toEqual({ routes: {}, exitNode: [] });
+  });
+
+  test("readGrants keeps raw objects and grantStrings coerces fields", () => {
+    const grants = readGrants({
+      grants: [{ src: ["group:a"], dst: ["tag:b"], ip: ["*"], app: { "cap/x": [] } }, null, 5],
+    });
+    expect(grants).toHaveLength(1);
+    expect(grantStrings(grants[0], "src")).toEqual(["group:a"]);
+    expect(grants[0].app).toEqual({ "cap/x": [] });
+  });
+
+  test("editing a grant field preserves its app capability via round-trip", () => {
+    const policy = { grants: [{ src: ["group:a"], dst: ["tag:b"], app: { "cap/x": [{ y: 1 }] } }] };
+    const grants = readGrants(policy);
+    const next = setPolicyKey(policy, "grants", [{ ...grants[0], dst: ["tag:c"] }]);
+    const reparsed = parsePolicy(serializePolicy(next));
+    if ("error" in reparsed) throw new Error(reparsed.error);
+    const back = readGrants(reparsed.data);
+    expect(back[0].dst).toEqual(["tag:c"]);
+    expect(back[0].app).toEqual({ "cap/x": [{ y: 1 }] });
   });
 });
