@@ -12,6 +12,7 @@ export interface SelectItem {
 export interface SelectProps {
   items: SelectItem[];
   label: string;
+  labelHidden?: boolean;
   name?: string;
   className?: string;
   placeholder?: string;
@@ -28,6 +29,7 @@ export interface SelectProps {
 export default function Select({
   items,
   label,
+  labelHidden,
   className,
   placeholder,
   description,
@@ -53,6 +55,7 @@ export default function Select({
       errorMessage={errorMessage}
       invalid={invalid}
       label={label}
+      labelHidden={labelHidden}
       name={name}
     >
       <Combobox.Root
