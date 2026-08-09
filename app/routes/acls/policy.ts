@@ -119,6 +119,23 @@ export function readAutoApprovers(policy: PolicyObject): AutoApprovers {
   };
 }
 
+// Grants are kept as raw objects rather than a fixed shape: a grant may carry
+// `app` capabilities (arbitrary JSON) that the builder does not model, so edits
+// spread over the original object to preserve those fields.
+export function readGrants(policy: PolicyObject): Record<string, unknown>[] {
+  const value = policy.grants;
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(
+    (g): g is Record<string, unknown> => g !== null && typeof g === "object" && !Array.isArray(g),
+  );
+}
+
+export function grantStrings(grant: Record<string, unknown>, key: string): string[] {
+  return asStringArray(grant[key]);
+}
+
 // Serializes an acl rule, dropping proto when unset to keep output minimal.
 export function aclToJson(rule: AclRule): Record<string, unknown> {
   const json: Record<string, unknown> = { action: rule.action, src: rule.src, dst: rule.dst };
