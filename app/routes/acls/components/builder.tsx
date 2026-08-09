@@ -1,4 +1,6 @@
 import {
+  Info,
+  KeyRound,
   ListChecks,
   Network,
   Plus,
@@ -23,9 +25,11 @@ import {
   type PolicyObject,
   type SshRule,
   aclToJson,
+  grantStrings,
   parsePolicy,
   readAcls,
   readAutoApprovers,
+  readGrants,
   readSsh,
   readStringArrayMap,
   readStringMap,
@@ -38,6 +42,12 @@ interface BuilderProps {
   value: string;
   onChange: (value: string) => void;
 }
+
+// Autogroups Headscale accepts, grouped by where they are valid.
+const ACL_SRC_AUTOGROUPS = ["autogroup:member", "autogroup:tagged"];
+const ACL_DST_AUTOGROUPS = ["autogroup:internet:*"];
+const SSH_DST_AUTOGROUPS = ["autogroup:self", "autogroup:tagged"];
+const SSH_USER_AUTOGROUPS = ["autogroup:nonroot", "root"];
 
 export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
   const parsed = useMemo(() => parsePolicy(value), [value]);
@@ -58,6 +68,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
   const tagOwners = readStringArrayMap(data, "tagOwners");
   const hosts = readStringMap(data, "hosts");
   const acls = readAcls(data);
+  const grants = readGrants(data);
   const ssh = readSsh(data);
   const autoApprovers = readAutoApprovers(data);
 
@@ -65,15 +76,28 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
   const tagNames = tagOwners.map(([name]) => name);
   const hostNames = hosts.map(([name]) => name);
   const owners = ["*", ...groupNames, ...tagNames];
-  const sources = ["*", ...groupNames, ...tagNames, ...hostNames, "autogroup:member"];
-  const destinations = ["*:*", ...tagNames, ...hostNames.map((h) => `${h}:*`)];
+  const sources = ["*", ...groupNames, ...tagNames, ...hostNames, ...ACL_SRC_AUTOGROUPS];
+  const destinations = [
+    "*:*",
+    ...tagNames,
+    ...hostNames.map((h) => `${h}:*`),
+    ...ACL_DST_AUTOGROUPS,
+  ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <p className="max-w-prose text-sm text-mist-500 dark:text-mist-400">
-        Editing here reformats the policy and removes comments. Use the <strong>Edit file</strong>{" "}
-        tab to keep them.
-      </p>
+    <div className="flex max-w-4xl flex-col gap-5">
+      <div
+        className={cn(
+          "flex items-start gap-2 rounded-lg px-3 py-2 text-xs",
+          "bg-mist-100/60 text-mist-500 dark:bg-mist-900/50 dark:text-mist-400",
+        )}
+      >
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+          Changes here reformat the policy and drop comments. Use the <strong>Edit file</strong> tab
+          to keep them.
+        </span>
+      </div>
 
       <Section
         icon={<Users className="h-4 w-4" />}
@@ -212,6 +236,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
                 placeholder="group:engineering"
                 values={rule.src}
                 suggestions={sources}
+                quickAdd={ACL_SRC_AUTOGROUPS}
                 disabled={isDisabled}
                 onChange={(v) => write({ ...rule, src: v })}
               />
@@ -220,6 +245,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
                 placeholder="tag:server:22"
                 values={rule.dst}
                 suggestions={destinations}
+                quickAdd={ACL_DST_AUTOGROUPS}
                 disabled={isDisabled}
                 onChange={(v) => write({ ...rule, dst: v })}
               />
@@ -230,6 +256,64 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
                 value={rule.proto ?? ""}
                 disabled={isDisabled}
                 onChange={(v) => write({ ...rule, proto: v || undefined })}
+              />
+            </Row>
+          );
+        })}
+      </Section>
+
+      <Section
+        icon={<KeyRound className="h-4 w-4" />}
+        title="Grants"
+        description="Headscale's newer authorization model. Grant access from sources to destinations over specific protocols and ports."
+        onAdd={() =>
+          update(setPolicyKey(data, "grants", [...grants, { src: [], dst: [], ip: ["*"] }]))
+        }
+        addLabel="Add grant"
+        disabled={isDisabled}
+        empty={grants.length === 0}
+      >
+        {grants.map((grant, index) => {
+          const write = (next: Record<string, unknown>) =>
+            update(setPolicyKey(data, "grants", replaceAt(grants, index, next)));
+          return (
+            <Row
+              key={index}
+              onRemove={() => update(setPolicyKey(data, "grants", removeAt(grants, index)))}
+            >
+              <ChipInput
+                label="Source"
+                placeholder="group:engineering"
+                values={grantStrings(grant, "src")}
+                suggestions={sources}
+                quickAdd={ACL_SRC_AUTOGROUPS}
+                disabled={isDisabled}
+                onChange={(v) => write({ ...grant, src: v })}
+              />
+              <ChipInput
+                label="Destination"
+                placeholder="tag:server"
+                values={grantStrings(grant, "dst")}
+                suggestions={[...tagNames, ...hostNames, ...ACL_DST_AUTOGROUPS]}
+                quickAdd={ACL_DST_AUTOGROUPS}
+                disabled={isDisabled}
+                onChange={(v) => write({ ...grant, dst: v })}
+              />
+              <ChipInput
+                label="IP / protocol"
+                placeholder="tcp:22"
+                values={grantStrings(grant, "ip")}
+                suggestions={["*", "tcp:22", "tcp:80", "tcp:443", "udp:53", "icmp"]}
+                quickAdd={["*"]}
+                disabled={isDisabled}
+                onChange={(v) => write({ ...grant, ip: v })}
+              />
+              <JsonField
+                label="App capabilities"
+                description='Optional JSON object of capability grants, e.g. {"example.com/cap/x": [{}]}.'
+                value={grant.app}
+                disabled={isDisabled}
+                onChange={(app) => write({ ...grant, app })}
               />
             </Row>
           );
@@ -272,6 +356,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
                 placeholder="group:admins"
                 values={rule.src}
                 suggestions={sources}
+                quickAdd={ACL_SRC_AUTOGROUPS}
                 disabled={isDisabled}
                 onChange={(v) => write({ ...rule, src: v })}
               />
@@ -279,7 +364,8 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
                 label="Destination"
                 placeholder="tag:server"
                 values={rule.dst}
-                suggestions={[...tagNames, "autogroup:self"]}
+                suggestions={[...tagNames, ...SSH_DST_AUTOGROUPS]}
+                quickAdd={SSH_DST_AUTOGROUPS}
                 disabled={isDisabled}
                 onChange={(v) => write({ ...rule, dst: v })}
               />
@@ -287,7 +373,8 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
                 label="SSH users"
                 placeholder="autogroup:nonroot"
                 values={rule.users}
-                suggestions={["autogroup:nonroot", "root"]}
+                suggestions={SSH_USER_AUTOGROUPS}
+                quickAdd={SSH_USER_AUTOGROUPS}
                 disabled={isDisabled}
                 onChange={(v) => write({ ...rule, users: v })}
               />
@@ -444,10 +531,27 @@ function Section({
   empty,
 }: SectionProps) {
   return (
-    <div className="rounded-lg border border-mist-200 dark:border-mist-800">
-      <div className="flex items-center justify-between gap-4 border-b border-mist-200 p-4 dark:border-mist-800">
-        <div className="flex items-center gap-2.5">
-          <span className="text-mist-500 dark:text-mist-400">{icon}</span>
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl shadow-sm",
+        "border border-mist-200 bg-mist-50/50 dark:border-mist-800 dark:bg-mist-950/50",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center justify-between gap-4 px-4 py-3",
+          "border-b border-mist-200 bg-mist-100/50 dark:border-mist-800 dark:bg-mist-900/40",
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-lg",
+              "bg-mist-200/60 text-mist-600 dark:bg-mist-800 dark:text-mist-300",
+            )}
+          >
+            {icon}
+          </span>
           <div>
             <h3 className="text-sm font-semibold">{title}</h3>
             <p className="text-xs text-mist-500 dark:text-mist-400">{description}</p>
@@ -461,17 +565,89 @@ function Section({
         ) : null}
       </div>
       {empty && onAdd ? (
-        <p className="p-4 text-sm text-mist-400 dark:text-mist-500">Nothing here yet.</p>
+        <p className="px-4 py-6 text-center text-sm text-mist-400 dark:text-mist-500">
+          Nothing here yet.
+        </p>
       ) : (
-        children
+        <div className="divide-y divide-mist-200/70 dark:divide-mist-800/60">{children}</div>
       )}
+    </div>
+  );
+}
+
+interface JsonFieldProps {
+  label: string;
+  description?: string;
+  value: unknown;
+  disabled?: boolean;
+  onChange: (value: Record<string, unknown> | undefined) => void;
+}
+
+// Inline editor for an arbitrary JSON object (grant `app` capabilities). Keeps
+// a local draft while editing so invalid JSON never overwrites the policy; an
+// empty field clears the key.
+function JsonField({ label, description, value, disabled, onChange }: JsonFieldProps) {
+  const initial = value !== undefined && value !== null ? JSON.stringify(value, null, 2) : "";
+  const [draft, setDraft] = useState<string | null>(null);
+  const [error, setError] = useState<string>();
+  const text = draft ?? initial;
+
+  const commit = () => {
+    if (draft === null) {
+      return;
+    }
+    const trimmed = draft.trim();
+    if (trimmed === "") {
+      setError(undefined);
+      setDraft(null);
+      onChange(undefined);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("must be a JSON object");
+      }
+      setError(undefined);
+      setDraft(null);
+      onChange(parsed as Record<string, unknown>);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "invalid JSON");
+    }
+  };
+
+  return (
+    <div className="flex w-full flex-col gap-1 sm:col-span-2">
+      <span className="text-sm font-medium text-mist-700 dark:text-mist-200">{label}</span>
+      <textarea
+        value={text}
+        rows={value || draft !== null ? 4 : 1}
+        disabled={disabled}
+        spellCheck={false}
+        placeholder="{}"
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        className={cn(
+          "resize-y rounded-md border px-3 py-2 font-mono text-xs outline-hidden",
+          "bg-white dark:bg-mist-900",
+          "focus:ring-2 focus:ring-indigo-500/40 focus:ring-offset-1",
+          "dark:focus:ring-indigo-400/40 dark:focus:ring-offset-mist-900",
+          error ? "border-red-400" : "border-mist-200 dark:border-mist-800",
+          disabled && "opacity-50",
+        )}
+      />
+      {error ? (
+        <span className="text-xs text-red-500 dark:text-red-400">Invalid JSON: {error}</span>
+      ) : description ? (
+        <span className="text-xs text-mist-500 dark:text-mist-400">{description}</span>
+      ) : null}
     </div>
   );
 }
 
 function Row({ children, onRemove }: { children: ReactNode; onRemove: () => void }) {
   return (
-    <div className="flex items-start gap-3 border-b border-mist-100 p-4 last:border-b-0 dark:border-mist-800/50">
+    <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-mist-100/40 dark:hover:bg-mist-900/30">
       <div className="grid flex-1 gap-3 sm:grid-cols-2">{children}</div>
       <button
         type="button"
@@ -495,6 +671,7 @@ interface ChipInputProps {
   placeholder?: string;
   values: string[];
   suggestions?: string[];
+  quickAdd?: string[];
   disabled?: boolean;
   onChange: (values: string[]) => void;
 }
@@ -505,6 +682,7 @@ function ChipInput({
   placeholder,
   values,
   suggestions,
+  quickAdd,
   disabled,
   onChange,
 }: ChipInputProps) {
@@ -587,6 +765,27 @@ function ChipInput({
           </datalist>
         ) : null}
       </div>
+      {!disabled && quickAdd ? (
+        <div className="flex flex-wrap gap-1">
+          {quickAdd
+            .filter((option) => !values.includes(option))
+            .map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => onChange([...values, option])}
+                className={cn(
+                  "inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-xs",
+                  "text-mist-500 hover:text-indigo-600 dark:text-mist-400 dark:hover:text-indigo-400",
+                  "hover:bg-indigo-50 dark:hover:bg-indigo-500/10",
+                )}
+              >
+                <Plus className="h-3 w-3" />
+                {option}
+              </button>
+            ))}
+        </div>
+      ) : null}
     </div>
   );
 }
