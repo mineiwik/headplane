@@ -1,5 +1,11 @@
 # Next
 
+# 0.8.0 (August 9, 2026)
+
+- Added a visual editor for the ACL policy. Alongside the raw HuJSON editor, a form-based "Visual editor" tab lets you manage groups, tag owners, hosts, ACL rules, SSH rules, and auto approvers without hand-editing JSON. Unknown top-level keys are preserved on save.
+
+---
+
 # 0.7.1 (August 27, 2026)
 
 ## Changes
