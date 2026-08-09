@@ -1,12 +1,4 @@
-import {
-  AlertCircle,
-  Construction,
-  Eye,
-  FlaskConical,
-  Pencil,
-  Shield,
-  TagsIcon,
-} from "lucide-react";
+import { AlertCircle, Eye, LayoutList, Pencil, Shield, TagsIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { isRouteErrorResponse, useFetcher, useRevalidator } from "react-router";
@@ -41,6 +33,7 @@ const LazyEditor = lazy(() =>
 const LazyDiffer = lazy(() =>
   import("./components/cm.client").then((m) => ({ default: m.Differ })),
 );
+const LazyBuilder = lazy(() => import("./components/builder"));
 
 export const loader = aclLoader;
 export const action = aclAction;
@@ -161,6 +154,12 @@ export default function Page({
               <span>Tags &amp; Groups</span>
             </div>
           </TabsTab>
+          <TabsTab value="builder">
+            <div className="flex items-center gap-2">
+              <LayoutList className="p-1" />
+              <span>Visual editor</span>
+            </div>
+          </TabsTab>
           <TabsTab value="edit">
             <div className="flex items-center gap-2">
               <Pencil className="p-1" />
@@ -171,12 +170,6 @@ export default function Page({
             <div className="flex items-center gap-2">
               <Eye className="p-1" />
               <span>Preview changes</span>
-            </div>
-          </TabsTab>
-          <TabsTab value="preview">
-            <div className="flex items-center gap-2">
-              <FlaskConical className="p-1" />
-              <span>Preview rules</span>
             </div>
           </TabsTab>
         </TabsList>
@@ -202,6 +195,11 @@ export default function Page({
             />
           ))}
         </TabsPanel>
+        <TabsPanel value="builder">
+          <Suspense fallback={<Fallback />}>
+            <LazyBuilder isDisabled={disabled} onChange={setCodePolicy} value={codePolicy} />
+          </Suspense>
+        </TabsPanel>
         <TabsPanel value="edit">
           <Suspense fallback={<Fallback />}>
             <LazyEditor isDisabled={disabled} onChange={setCodePolicy} value={codePolicy} />
@@ -211,15 +209,6 @@ export default function Page({
           <Suspense fallback={<Fallback />}>
             <LazyDiffer left={policy} right={codePolicy} />
           </Suspense>
-        </TabsPanel>
-        <TabsPanel value="preview">
-          <div className="flex flex-col items-center py-8">
-            <Construction />
-            <p className="mt-4 w-1/2 text-center">
-              Previewing rules is not available yet. This feature is still in development and is
-              pretty complicated to implement. Hopefully I will be able to get to it soon.
-            </p>
-          </div>
         </TabsPanel>
       </Tabs>
       <Button
