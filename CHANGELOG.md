@@ -1,5 +1,9 @@
 # Next
 
+# 0.8.2 (August 9, 2026)
+
+- Restyled the visual ACL editor to span the full width and show each section's column names once as a header row instead of repeating field labels on every row, matching the rest of the interface.
+
 # 0.8.1 (August 9, 2026)
 
 - Extended the visual ACL editor with a Grants section for Headscale's newer authorization model (source, destination, IP/protocol, and an inline JSON editor for app capabilities), added one-click quick-add chips for the autogroups Headscale accepts in each position, and restyled the sections to match the rest of the interface.
