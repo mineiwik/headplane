@@ -1,5 +1,8 @@
 # Next
 
+# 0.8.0 (August 9, 2026)
+
+- Added a visual editor for the ACL policy. Alongside the raw HuJSON editor, a form-based "Visual editor" tab lets you manage groups, tag owners, hosts, ACL rules, SSH rules, and auto approvers without hand-editing JSON. Unknown top-level keys are preserved on save.
 - Fixed the Headplane agent falling back to an interactive Tailscale login. The agent now starts with a pre-auth-key, preserves its existing state across restarts, and auto-approves itself when Headscale requires manual approval (closes [#582](https://github.com/tale/headplane/issues/582)).
 
 # 0.7.0
