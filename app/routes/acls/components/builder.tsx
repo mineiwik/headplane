@@ -43,6 +43,14 @@ interface BuilderProps {
   onChange: (value: string) => void;
 }
 
+// Static column-count classes (Tailwind cannot see dynamic class names).
+const GRID_COLS: Record<number, string> = {
+  1: "",
+  2: "sm:grid-cols-2",
+  3: "sm:grid-cols-3",
+  4: "sm:grid-cols-4",
+};
+
 // Autogroups Headscale accepts, grouped by where they are valid.
 const ACL_SRC_AUTOGROUPS = ["autogroup:member", "autogroup:tagged"];
 const ACL_DST_AUTOGROUPS = ["autogroup:internet:*"];
@@ -85,7 +93,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
   ];
 
   return (
-    <div className="flex max-w-4xl flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div
         className={cn(
           "flex items-start gap-2 rounded-lg px-3 py-2 text-xs",
@@ -103,6 +111,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
         icon={<Users className="h-4 w-4" />}
         title="Groups"
         description="Collections of users you can reference elsewhere."
+        columns={["Name", "Members"]}
         onAdd={() => update(setMap(data, "groups", [...groups, ["group:", []]]))}
         addLabel="Add group"
         disabled={isDisabled}
@@ -112,6 +121,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
           <Row key={index} onRemove={() => update(setMap(data, "groups", removeAt(groups, index)))}>
             <Input
               label="Name"
+              labelHidden
               placeholder="group:engineering"
               value={name}
               disabled={isDisabled}
@@ -121,6 +131,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
             />
             <ChipInput
               label="Members"
+              labelHidden
               placeholder="user@example.com"
               values={members}
               suggestions={groupNames}
@@ -135,6 +146,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
         icon={<Tag className="h-4 w-4" />}
         title="Tag owners"
         description="Who is allowed to assign each device tag."
+        columns={["Tag", "Owners"]}
         onAdd={() => update(setMap(data, "tagOwners", [...tagOwners, ["tag:", []]]))}
         addLabel="Add tag"
         disabled={isDisabled}
@@ -147,6 +159,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
           >
             <Input
               label="Tag"
+              labelHidden
               placeholder="tag:server"
               value={name}
               disabled={isDisabled}
@@ -156,6 +169,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
             />
             <ChipInput
               label="Owners"
+              labelHidden
               placeholder="group:admins"
               values={ownerList}
               suggestions={owners}
@@ -172,6 +186,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
         icon={<Server className="h-4 w-4" />}
         title="Hosts"
         description="Named aliases for IP addresses or CIDR ranges."
+        columns={["Name", "CIDR"]}
         onAdd={() => update(setStringMap(data, "hosts", [...hosts, ["", ""]]))}
         addLabel="Add host"
         disabled={isDisabled}
@@ -184,6 +199,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
           >
             <Input
               label="Name"
+              labelHidden
               placeholder="internal-web"
               value={name}
               disabled={isDisabled}
@@ -193,6 +209,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
             />
             <Input
               label="CIDR"
+              labelHidden
               placeholder="10.0.0.1/32"
               value={cidr}
               disabled={isDisabled}
@@ -208,6 +225,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
         icon={<ListChecks className="h-4 w-4" />}
         title="ACL rules"
         description="Allow traffic from sources to destinations. Rules are accept-only."
+        columns={["Source", "Destination", "Protocol"]}
         onAdd={() =>
           update(
             setPolicyKey(
@@ -227,12 +245,14 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
           return (
             <Row
               key={index}
+              cols={3}
               onRemove={() =>
                 update(setPolicyKey(data, "acls", removeAt(acls, index).map(aclToJson)))
               }
             >
               <ChipInput
                 label="Source"
+                labelHidden
                 placeholder="group:engineering"
                 values={rule.src}
                 suggestions={sources}
@@ -242,6 +262,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
               />
               <ChipInput
                 label="Destination"
+                labelHidden
                 placeholder="tag:server:22"
                 values={rule.dst}
                 suggestions={destinations}
@@ -251,8 +272,8 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
               />
               <Input
                 label="Protocol"
-                description="Optional. e.g. tcp, udp, icmp."
-                placeholder="any"
+                labelHidden
+                placeholder="any (tcp, udp, icmp)"
                 value={rule.proto ?? ""}
                 disabled={isDisabled}
                 onChange={(v) => write({ ...rule, proto: v || undefined })}
@@ -266,6 +287,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
         icon={<KeyRound className="h-4 w-4" />}
         title="Grants"
         description="Headscale's newer authorization model. Grant access from sources to destinations over specific protocols and ports."
+        columns={["Source", "Destination", "IP / protocol"]}
         onAdd={() =>
           update(setPolicyKey(data, "grants", [...grants, { src: [], dst: [], ip: ["*"] }]))
         }
@@ -279,10 +301,12 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
           return (
             <Row
               key={index}
+              cols={3}
               onRemove={() => update(setPolicyKey(data, "grants", removeAt(grants, index)))}
             >
               <ChipInput
                 label="Source"
+                labelHidden
                 placeholder="group:engineering"
                 values={grantStrings(grant, "src")}
                 suggestions={sources}
@@ -292,6 +316,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
               />
               <ChipInput
                 label="Destination"
+                labelHidden
                 placeholder="tag:server"
                 values={grantStrings(grant, "dst")}
                 suggestions={[...tagNames, ...hostNames, ...ACL_DST_AUTOGROUPS]}
@@ -301,6 +326,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
               />
               <ChipInput
                 label="IP / protocol"
+                labelHidden
                 placeholder="tcp:22"
                 values={grantStrings(grant, "ip")}
                 suggestions={["*", "tcp:22", "tcp:80", "tcp:443", "udp:53", "icmp"]}
@@ -324,6 +350,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
         icon={<Terminal className="h-4 w-4" />}
         title="SSH rules"
         description="Control Tailscale SSH access to tagged devices."
+        columns={["Action", "Source", "Destination", "SSH users"]}
         onAdd={() =>
           update(
             setPolicyKey(data, "ssh", [...ssh, { action: "accept", src: [], dst: [], users: [] }]),
@@ -339,10 +366,11 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
           return (
             <Row
               key={index}
+              cols={4}
               onRemove={() => update(setPolicyKey(data, "ssh", removeAt(ssh, index)))}
             >
               <Select
-                label="Action"
+                aria-label="Action"
                 items={[
                   { value: "accept", label: "accept" },
                   { value: "check", label: "check (re-auth)" },
@@ -353,6 +381,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
               />
               <ChipInput
                 label="Source"
+                labelHidden
                 placeholder="group:admins"
                 values={rule.src}
                 suggestions={sources}
@@ -362,6 +391,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
               />
               <ChipInput
                 label="Destination"
+                labelHidden
                 placeholder="tag:server"
                 values={rule.dst}
                 suggestions={[...tagNames, ...SSH_DST_AUTOGROUPS]}
@@ -371,6 +401,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
               />
               <ChipInput
                 label="SSH users"
+                labelHidden
                 placeholder="autogroup:nonroot"
                 values={rule.users}
                 suggestions={SSH_USER_AUTOGROUPS}
@@ -387,6 +418,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
         icon={<Route className="h-4 w-4" />}
         title="Auto approvers — routes"
         description="Advertised routes that are approved automatically."
+        columns={["Route", "Approvers"]}
         onAdd={() =>
           update(
             setAutoApprovers(data, {
@@ -415,6 +447,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
             >
               <Input
                 label="Route"
+                labelHidden
                 placeholder="192.168.0.0/24"
                 value={cidr}
                 disabled={isDisabled}
@@ -429,6 +462,7 @@ export default function Builder({ value, onChange, isDisabled }: BuilderProps) {
               />
               <ChipInput
                 label="Approvers"
+                labelHidden
                 placeholder="tag:router"
                 values={ownerList}
                 suggestions={owners}
@@ -513,6 +547,7 @@ interface SectionProps {
   icon: ReactNode;
   title: string;
   description: string;
+  columns?: string[];
   children?: ReactNode;
   onAdd?: () => void;
   addLabel?: string;
@@ -524,6 +559,7 @@ function Section({
   icon,
   title,
   description,
+  columns,
   children,
   onAdd,
   addLabel,
@@ -537,12 +573,7 @@ function Section({
         "border border-mist-200 bg-mist-50/50 dark:border-mist-800 dark:bg-mist-950/50",
       )}
     >
-      <div
-        className={cn(
-          "flex items-center justify-between gap-4 px-4 py-3",
-          "border-b border-mist-200 bg-mist-100/50 dark:border-mist-800 dark:bg-mist-900/40",
-        )}
-      >
+      <div className="flex items-center justify-between gap-4 px-4 py-3">
         <div className="flex items-center gap-3">
           <span
             className={cn(
@@ -565,11 +596,30 @@ function Section({
         ) : null}
       </div>
       {empty && onAdd ? (
-        <p className="px-4 py-6 text-center text-sm text-mist-400 dark:text-mist-500">
+        <p className="border-t border-mist-200 px-4 py-6 text-center text-sm text-mist-400 dark:border-mist-800 dark:text-mist-500">
           Nothing here yet.
         </p>
       ) : (
-        <div className="divide-y divide-mist-200/70 dark:divide-mist-800/60">{children}</div>
+        <>
+          {columns ? (
+            <div className="hidden gap-3 border-t border-mist-200 bg-mist-100/40 px-4 py-2 sm:flex dark:border-mist-800 dark:bg-mist-900/40">
+              <div className={cn("grid flex-1 gap-3", GRID_COLS[columns.length])}>
+                {columns.map((column) => (
+                  <span
+                    key={column}
+                    className="text-xs font-medium tracking-wide text-mist-400 uppercase dark:text-mist-500"
+                  >
+                    {column}
+                  </span>
+                ))}
+              </div>
+              <div className="w-8 shrink-0" />
+            </div>
+          ) : null}
+          <div className="divide-y divide-mist-200/70 border-t border-mist-200 dark:divide-mist-800/60 dark:border-mist-800">
+            {children}
+          </div>
+        </>
       )}
     </div>
   );
@@ -617,8 +667,8 @@ function JsonField({ label, description, value, disabled, onChange }: JsonFieldP
   };
 
   return (
-    <div className="flex w-full flex-col gap-1 sm:col-span-2">
-      <span className="text-sm font-medium text-mist-700 dark:text-mist-200">{label}</span>
+    <div className="flex w-full flex-col gap-1 sm:col-span-full">
+      <span className="text-xs font-medium text-mist-500 dark:text-mist-400">{label}</span>
       <textarea
         value={text}
         rows={value || draft !== null ? 4 : 1}
@@ -645,16 +695,24 @@ function JsonField({ label, description, value, disabled, onChange }: JsonFieldP
   );
 }
 
-function Row({ children, onRemove }: { children: ReactNode; onRemove: () => void }) {
+function Row({
+  children,
+  onRemove,
+  cols = 2,
+}: {
+  children: ReactNode;
+  onRemove: () => void;
+  cols?: number;
+}) {
   return (
-    <div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-mist-100/40 dark:hover:bg-mist-900/30">
-      <div className="grid flex-1 gap-3 sm:grid-cols-2">{children}</div>
+    <div className="flex items-start gap-3 px-4 py-2.5 transition-colors hover:bg-mist-100/40 dark:hover:bg-mist-900/30">
+      <div className={cn("grid flex-1 gap-3", GRID_COLS[cols])}>{children}</div>
       <button
         type="button"
         aria-label="Remove"
         onClick={onRemove}
         className={cn(
-          "mt-7 rounded-md p-2 text-mist-400",
+          "shrink-0 rounded-md p-2 text-mist-400",
           "hover:bg-red-50 hover:text-red-500",
           "dark:hover:bg-red-500/10",
         )}
