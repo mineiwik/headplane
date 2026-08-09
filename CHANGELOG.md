@@ -1,5 +1,9 @@
 # Next
 
+# 0.8.1 (August 9, 2026)
+
+- Extended the visual ACL editor with a Grants section for Headscale's newer authorization model (source, destination, IP/protocol, and an inline JSON editor for app capabilities), added one-click quick-add chips for the autogroups Headscale accepts in each position, and restyled the sections to match the rest of the interface.
+
 # 0.8.0 (August 9, 2026)
 
 - Added a visual editor for the ACL policy. Alongside the raw HuJSON editor, a form-based "Visual editor" tab lets you manage groups, tag owners, hosts, ACL rules, SSH rules, and auto approvers without hand-editing JSON. Unknown top-level keys are preserved on save.
