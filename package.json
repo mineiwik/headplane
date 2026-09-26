@@ -1,6 +1,6 @@
 {
   "name": "headplane",
-  "version": "0.8.2",
+  "version": "0.8.4-custom",
   "private": true,
   "type": "module",
   "sideEffects": false,

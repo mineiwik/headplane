@@ -1,5 +1,13 @@
 # Next
 
+# 0.8.4-custom (September 26, 2026)
+
+- Rebased onto upstream `main`, picking up the structured editor for ACL rules, tags and groups ([#608](https://github.com/tale/headplane/pull/608)). It sits alongside the visual editor as the Rules and Tags & Groups tabs.
+
+# 0.8.3-custom (September 6, 2026)
+
+- Merged changes from 0.7.1
+
 # 0.8.2 (August 9, 2026)
 
 - Restyled the visual ACL editor to span the full width and show each section's column names once as a header row instead of repeating field labels on every row, matching the rest of the interface.
