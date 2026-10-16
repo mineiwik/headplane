@@ -1,5 +1,9 @@
 # Next
 
+# 0.8.1-custom.1 (October 16, 2026)
+
+> This is a beta release. Please report any issues you encounter.
+
 ## Changes
 
 - Headplane has a new color palette built from its logo: warm greys, black primary buttons, and a muted blue that marks links, focus, and the current page. Dark mode now separates the page, menus, and dialogs by shade so overlays stand out, and secondary text is easier to read in both themes (via [#651](https://github.com/tale/headplane/issues/651)).
@@ -33,6 +37,8 @@
 - The logo in the navigation bar now follows the theme picked in Headplane instead of the system theme.
 - Fields with an error keep their red border while focused instead of turning blue.
 - Browser SSH no longer connects as a Headscale user that's already linked to someone else's account just because the email matches. An unlinked account now links the same way it does everywhere else first.
+
+---
 
 # 0.8.1 (October 16, 2026)
 
