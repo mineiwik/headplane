@@ -1,5 +1,14 @@
 # Next
 
+## Changes
+
+- Grants on the Access Control page can route traffic through tagged subnet routers with **Via**.
+
+## Fixes
+
+- The auto approver dialog rejects route prefixes that are out of range, like `/33` for IPv4, `/129` for IPv6, or an IPv4 octet above 255.
+- A grant without ports no longer shows a stray "on" in the Grants list.
+
 # 0.8.1-custom.2 (October 16, 2026)
 
 > This is a beta release. Please report any issues you encounter.
@@ -26,7 +35,7 @@
 - Pre-auth keys are called auth keys everywhere in Headplane, matching Tailscale. **Generate Pre-auth Key** in the **Add machine** menu is now **Create auth key**.
 - Browser SSH's username prompt, offline machine page, and error pages use the sign-in layout, with shorter error messages that link straight to the matching troubleshooting section.
 - Open pages notice within a few seconds when Headscale goes down or comes back, and update on their own. The "Can't reach Headscale" banner and error pages clear without a reload.
-- The **Rules** tab on the Access Control page can now edit grants and auto approvers. Grants set ports and protocols separately from the destination, can route traffic through tagged subnet routers with `via`, and keep app capabilities as written. Auto approvers cover both subnet routes and exit nodes.
+- The **Rules** tab on the Access Control page can now edit grants and auto approvers. Grants set ports and protocols separately from the destination, and app capabilities are kept as written. Auto approvers cover both subnet routes and exit nodes.
 
 ## Fixes
 
