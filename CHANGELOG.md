@@ -1,5 +1,9 @@
 # Next
 
+# 0.8.1-custom.3 (October 16, 2026)
+
+> This is a beta release. Please report any issues you encounter.
+
 ## Changes
 
 - Grants on the Access Control page can route traffic through tagged subnet routers with **Via**.
@@ -8,6 +12,8 @@
 
 - The auto approver dialog rejects route prefixes that are out of range, like `/33` for IPv4, `/129` for IPv6, or an IPv4 octet above 255.
 - A grant without ports no longer shows a stray "on" in the Grants list.
+
+---
 
 # 0.8.1-custom.2 (October 16, 2026)
 
