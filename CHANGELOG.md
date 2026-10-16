@@ -22,6 +22,7 @@
 - Pre-auth keys are called auth keys everywhere in Headplane, matching Tailscale. **Generate Pre-auth Key** in the **Add machine** menu is now **Create auth key**.
 - Browser SSH's username prompt, offline machine page, and error pages use the sign-in layout, with shorter error messages that link straight to the matching troubleshooting section.
 - Open pages notice within a few seconds when Headscale goes down or comes back, and update on their own. The "Can't reach Headscale" banner and error pages clear without a reload.
+- The ACL page has a **Visual editor** tab. It edits groups, tag owners, hosts, ACL rules, grants, SSH rules, and auto approvers in forms instead of raw HuJSON. Quick-add buttons insert the autogroups that Headscale accepts in each field. Top-level keys the editor does not know are kept on save.
 
 ## Fixes
 
